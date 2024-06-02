@@ -1,0 +1,9 @@
+dataformCoreVersion: 3.0.0-beta.6
+defaultProject: winter-dataform
+defaultLocation: australia-southeast1
+defaultDataset: tmdb
+defaultAssertionDataset: tmdb_assertions
+vars:
+  LOAD_GCS_BUCKET: winter-data/tmdb
+  RAW_DATA: tmdb_staging
+  TARGET_DATA: tmdb

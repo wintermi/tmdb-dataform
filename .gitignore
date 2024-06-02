@@ -1,0 +1,21 @@
+# System Files
+.cache
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+*.sublime-project
+*.sublime-workspace
+.vscode/
+*.code-workspace
+
+# dependencies
+node_modules/
+
+# Dataform Credentials
+.df-credentials.json
+
+# Project Excludes
+tmp/*
+!tmp/.gitkeep
