@@ -14,6 +14,6 @@ LOAD DATA OVERWRITE ${ self() }
 FROM FILES (
   format = "JSON",
   hive_partition_uri_prefix = "gs://${ dataform.projectConfig.vars.LOAD_GCS_BUCKET }/",
-  uris = ["gs://${ dataform.projectConfig.vars.LOAD_GCS_BUCKET }/export_date*/production_company_ids.json"]
+  uris = ["gs://${ dataform.projectConfig.vars.LOAD_GCS_BUCKET }/export_date*/company_ids.json"]
 )
 WITH PARTITION COLUMNS;
