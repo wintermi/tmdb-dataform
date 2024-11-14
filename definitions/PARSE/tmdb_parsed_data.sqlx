@@ -1,0 +1,51 @@
+config {
+  type: "table",
+  schema: dataform.projectConfig.vars.TARGET_DATA,
+  description: "Pre-Parse the TMDB JSON Data returned from the Export API, removing duplicates and cleansing data.",
+  dependOnDependencyAssertions: true,
+  bigquery: {
+    partitionBy: "export_date",
+    clusterBy: ["type", "response_type"]
+  },
+  assertions: {
+    uniqueKey: ["id", "type", "export_date", "response_type"],
+    nonNull: ["id", "type", "export_date", "response_type"]
+  },
+  tags: ["PARSE_DATA"]
+}
+
+
+SELECT
+    id
+  , type
+  , response_type
+  , export_date
+  , response_json_string
+  , response_json
+FROM (SELECT
+          id
+        , type
+        , response_type
+        , export_date
+        , response_json_string
+        , SAFE.PARSE_JSON(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TRIM(response_json_string)
+                                                                , CHR(0x08), r"\u0008")
+                                                        , CHR(0x09), r"\u0009")
+                                                , CHR(0x0A), r"\u000A")
+                                        , CHR(0x0C), r"\u000C")
+                                , CHR(0x0D), r"\u000D")) AS response_json
+      FROM (SELECT DISTINCT
+                id
+              , type
+              , response_type
+              , PARSE_DATE("%Y-%m-%d", export_date) AS export_date
+              , response_json_string
+            FROM ${ ref({ schema: dataform.projectConfig.vars.TARGET_DATA, name: "tmdb_data" }) }
+           ) AS deduped_data
+     ) AS parsed_data
+WHERE response_json.status_code IS NULL
+QUALIFY ROW_NUMBER() OVER (PARTITION BY id
+                                     , type
+                                     , export_date
+                                     , response_type
+                           ORDER BY LENGTH(response_json_string) DESC) = 1
