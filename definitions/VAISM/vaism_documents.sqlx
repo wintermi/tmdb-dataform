@@ -35,7 +35,7 @@ FROM (SELECT
         , ARRAY_CONCAT(ARRAY<STRING>[]) AS filter_tags
         , FORMAT('%dm', movie.runtime) AS duration
         , EXTRACT(YEAR FROM movie.release_date) AS production_year
-        , '' AS content_rating
+        , ARRAY_CONCAT(ARRAY<STRING>[]) AS content_rating
         , FORMAT_TIMESTAMP('%Y-%m-%dT%H:%M:%SZ', CAST(movie.release_date AS TIMESTAMP)) AS availability_start_time
         , ARRAY_CONCAT([STRUCT("tmdb" AS rating_source
                                -- Formula to change the rating scale from 1-10 (TMDB) to 1-5 (VAISM)
