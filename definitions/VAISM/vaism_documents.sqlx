@@ -1,0 +1,28 @@
+config {
+  type: "table",
+  schema: dataform.projectConfig.vars.TARGET_DATA,
+  description: "Vertex AI Search for Media (VAIS:M) Documents",
+  dependOnDependencyAssertions: true,
+  assertions: {
+    uniqueKey: ["id"]
+  },
+  tags: ["VAISM"]
+}
+
+
+SELECT
+    document_id AS id
+  , 'default_schema' AS schemaId
+  , parent_document_id AS parentDocumentId
+    -- Remove any known properties that could result in NULL values and potentially fail the import
+  , REGEXP_REPLACE(TO_JSON_STRING((SELECT AS STRUCT dt.* EXCEPT (document_id, parent_document_id)))
+                 , r'([""]+(\w*)[""]:null,*)', '') AS jsonData
+FROM (SELECT
+          -- minimum 4 digit id required for data import
+          FORMAT('%04d', m.id) AS document_id
+        , CAST(NULL AS STRING) AS parent_document_id
+        , m.title
+        , m.overview AS description
+        , 'en-US' AS language_code
+      FROM ${ ref({ schema: dataform.projectConfig.vars.TARGET_DATA, name: "tmdb_movie" }) } AS m
+     ) AS dt
