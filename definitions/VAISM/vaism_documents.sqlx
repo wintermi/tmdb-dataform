@@ -29,7 +29,7 @@ FROM (SELECT
         , ARRAY_CONCAT(IF(movie.poster_image IS NOT NULL, [STRUCT('Poster Art' AS name, movie.poster_image AS uri)], [])
                      , IF(movie.backdrop_image IS NOT NULL, [STRUCT('Backdrop Art' AS name, movie.backdrop_image AS uri)], [])) AS images
         , 'movie' AS media_type
-        , ARRAY_CONCAT([movie.original_language]) AS in_languages
+        , ARRAY_CONCAT([UPPER(movie.original_language)]) AS in_languages
         , IF(ARRAY_LENGTH(movie.origin_country) > 0, movie.origin_country[OFFSET(0)], NULL) AS country_of_origin
         , 1 AS content_index
         , ARRAY_CONCAT(ARRAY<STRING>[]) AS filter_tags
