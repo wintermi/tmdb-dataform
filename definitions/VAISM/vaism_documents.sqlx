@@ -19,26 +19,57 @@ SELECT
                  , r'([""]+(\w*)[""]:null,*)', '') AS jsonData
 FROM (SELECT
           -- minimum 4 digit id required for data import
-          FORMAT('%04d', m.id) AS document_id
+          FORMAT('%04d', movie.id) AS document_id
         , CAST(NULL AS STRING) AS parent_document_id
-        , m.title
-        , m.overview AS description
+        , movie.title
+        , movie.overview AS description
         , 'en-US' AS language_code
---        , ...categories
-        , m.homepage AS uri
-        , ARRAY_CONCAT(IF(m.poster_image IS NOT NULL, [STRUCT('Poster Art' AS name, m.poster_image AS uri)], [])
-                     , IF(m.backdrop_image IS NOT NULL, [STRUCT('Backdrop Art' AS name, m.backdrop_image AS uri)], [])) AS images
+        , movie_genre.categories
+        , movie.homepage AS uri
+        , ARRAY_CONCAT(IF(movie.poster_image IS NOT NULL, [STRUCT('Poster Art' AS name, movie.poster_image AS uri)], [])
+                     , IF(movie.backdrop_image IS NOT NULL, [STRUCT('Backdrop Art' AS name, movie.backdrop_image AS uri)], [])) AS images
         , 'movie' AS media_type
-        , ARRAY_CONCAT([m.original_language]) AS in_languages
-        , IF(ARRAY_LENGTH(m.origin_country) > 0, m.origin_country[OFFSET(0)], NULL) AS country_of_origin
---        , ...content_index
---        , ...filter_tags
-        , FORMAT('%dm', m.runtime) AS duration
-        , EXTRACT(YEAR FROM m.release_date) AS production_year
---        , ...content_rating
-        , FORMAT_TIMESTAMP('%Y-%m-%dT%H:%M:%SZ', CAST(m.release_date AS TIMESTAMP)) AS availability_start_time
---        , ...aggregate_ratings
---        , ...persons
---        , ...hash_tags
-      FROM ${ ref({ schema: dataform.projectConfig.vars.TARGET_DATA, name: "tmdb_movie" }) } AS m
+        , ARRAY_CONCAT([movie.original_language]) AS in_languages
+        , IF(ARRAY_LENGTH(movie.origin_country) > 0, movie.origin_country[OFFSET(0)], NULL) AS country_of_origin
+        , 1 AS content_index
+        , ARRAY_CONCAT(ARRAY<STRING>[]) AS filter_tags
+        , FORMAT('%dm', movie.runtime) AS duration
+        , EXTRACT(YEAR FROM movie.release_date) AS production_year
+        , '' AS content_rating
+        , FORMAT_TIMESTAMP('%Y-%m-%dT%H:%M:%SZ', CAST(movie.release_date AS TIMESTAMP)) AS availability_start_time
+        , ARRAY_CONCAT([STRUCT("tmdb" AS rating_source
+                               -- Formula to change the rating scale from 1-10 (TMDB) to 1-5 (VAISM)
+                               -- (((OldValue - OldMin) * (NewMax - NewMin)) / (OldMax - OldMin)) + NewMin
+                             , (((movie.vote_average - 1) * (5 - 1)) / (10 - 1)) + 1 AS rating_score
+                             , movie.vote_count AS rating_count)]) AS aggregate_ratings
+        , ARRAY_CONCAT(movie_actor.persons, movie_character.persons, movie_director.persons) AS persons
+        , ARRAY_CONCAT(ARRAY<STRING>[]) AS hash_tags
+      FROM ${ ref({ schema: dataform.projectConfig.vars.TARGET_DATA, name: "tmdb_movie" }) } AS movie
+        LEFT OUTER JOIN (SELECT
+                             id
+                           , ARRAY_AGG(name ORDER BY pos) AS categories
+                         FROM ${ ref({ schema: dataform.projectConfig.vars.TARGET_DATA, name: "tmdb_movie_genre" }) }
+                         GROUP BY 1) AS movie_genre
+          ON  movie.id = movie_genre.id
+        LEFT OUTER JOIN (SELECT
+                             id
+                           , ARRAY_AGG(STRUCT("actor" AS role, name, pos AS rank) ORDER BY pos ASC) AS persons
+                         FROM ${ ref({ schema: dataform.projectConfig.vars.TARGET_DATA, name: "tmdb_movie_cast" }) }
+                         WHERE known_for_department = 'Acting'
+                         GROUP BY 1) AS movie_actor
+          ON  movie.id = movie_actor.id
+        LEFT OUTER JOIN (SELECT
+                             id
+                           , ARRAY_AGG(STRUCT("character" AS role, character AS name, pos AS rank) ORDER BY pos ASC) AS persons
+                         FROM ${ ref({ schema: dataform.projectConfig.vars.TARGET_DATA, name: "tmdb_movie_cast" }) }
+                         WHERE known_for_department = 'Acting'
+                         GROUP BY 1) AS movie_character
+          ON  movie.id = movie_character.id
+        LEFT OUTER JOIN (SELECT
+                             id
+                           , ARRAY_AGG(STRUCT("director" AS role, name, pos AS rank) ORDER BY pos ASC) AS persons
+                         FROM ${ ref({ schema: dataform.projectConfig.vars.TARGET_DATA, name: "tmdb_movie_cast" }) }
+                         WHERE known_for_department = 'Directing'
+                         GROUP BY 1) AS movie_director
+          ON  movie.id = movie_director.id
      ) AS dt
