@@ -34,6 +34,5 @@ FROM ${ ref({ schema: dataform.projectConfig.vars.TARGET_DATA, name: "tmdb_parse
 WHERE type = "person"
   AND response_type = "detail"
   AND response_json IS NOT NULL
-  AND response_json.status_code IS NULL
 QUALIFY ROW_NUMBER() OVER (PARTITION BY id
                            ORDER BY export_date DESC) = 1

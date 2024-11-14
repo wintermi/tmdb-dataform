@@ -30,7 +30,6 @@ FROM (SELECT
       WHERE type = 'movie'
         AND response_type = 'detail'
         AND response_json IS NOT NULL
-        AND response_json.status_code IS NULL
       QUALIFY ROW_NUMBER() OVER (PARTITION BY id
                                             , pos
                                  ORDER BY export_date DESC) = 1) AS dt
