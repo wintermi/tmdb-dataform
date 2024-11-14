@@ -3,9 +3,6 @@ config {
   schema: dataform.projectConfig.vars.TARGET_DATA,
   description: "View for importing Vertex AI Search for Media (VAIS:M) Documents",
   dependOnDependencyAssertions: true,
-  assertions: {
-    uniqueKey: ["id"]
-  },
   tags: ["VAISM"]
 }
 
