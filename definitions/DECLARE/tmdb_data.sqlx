@@ -1,0 +1,4 @@
+config {
+  type: "declaration",
+  schema: dataform.projectConfig.vars.TARGET_DATA,
+}

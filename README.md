@@ -62,7 +62,7 @@ The `workflow_settings.yaml` contains the following parameters
 - `defaultDataset`: Name of the BigQuery Dataset for which the The Movie Database tables are to be created
 - `defaultAssertionDataset`: Name of the BigQuery Dataset for which any Dataform Assertions are to be created and executed against
 - `LOAD_GCS_BUCKET`: Name of the Google Cloud Storage Bucket, which you previously took note of
-- `RAW_DATA`: Name of the BigQuery Dataset for which the The Movie Database data files are to be loaded into
+- `STAGING_DATA`: Name of the BigQuery Dataset for which the The Movie Database data files are to be loaded into
 - `TARGET_DATA`: Name of the BigQuery Dataset for which the final transformed The Movie Database tables are to be located
 
 Here is an example configuration
@@ -75,6 +75,6 @@ defaultDataset: tmdb
 defaultAssertionDataset: tmdb_assertions
 vars:
   LOAD_GCS_BUCKET: winter-data/tmdb
-  RAW_DATA: tmdb_staging
+  STAGING_DATA: tmdb_staging
   TARGET_DATA: tmdb
 ```
