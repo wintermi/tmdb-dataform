@@ -30,7 +30,7 @@ FROM (SELECT
                      , IF(m.backdrop_image IS NOT NULL, [STRUCT('Backdrop Art' AS name, m.backdrop_image AS uri)], [])) AS images
         , 'movie' AS media_type
         , ARRAY_CONCAT([m.original_language]) AS in_languages
-        , m.origin_country[offset(0)] AS country_of_origin
+        , IF(m.origin_country IS NOT NULL, m.origin_country[offset(0)], NULL) AS country_of_origin
 --        , ...content_index
 --        , ...filter_tags
         , FORMAT('%ds', m.runtime) AS duration
