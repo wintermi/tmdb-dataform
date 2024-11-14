@@ -36,7 +36,7 @@ FROM (SELECT
         , FORMAT('%ds', m.runtime) AS duration
         , EXTRACT(YEAR FROM m.release_date) AS production_year
 --        , ...content_rating
-        , FORMAT_TIMESTAMP('%Y-%m-%dT%H:%M:%SZ', TIMESTAMP_SECONDS(m.release_date)) AS availability_start_time
+        , FORMAT_TIMESTAMP('%Y-%m-%dT%H:%M:%SZ', CAST(m.release_date AS TIMESTAMP)) AS availability_start_time
 --        , ...aggregate_ratings
 --        , ...persons
 --        , ...hash_tags
