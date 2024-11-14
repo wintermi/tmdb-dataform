@@ -2,7 +2,7 @@ config {
   hasOutput: true,
   type: "operations",
   schema: dataform.projectConfig.vars.RAW_DATA,
-  tags: ["LOAD_DATA"]
+  tags: ["LOAD_EXPORTS"]
 }
 
 

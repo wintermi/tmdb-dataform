@@ -2,20 +2,19 @@ config {
   hasOutput: true,
   type: "operations",
   schema: dataform.projectConfig.vars.RAW_DATA,
-  tags: ["LOAD_DATA"]
+  tags: ["LOAD_EXPORTS"]
 }
 
 
 LOAD DATA OVERWRITE ${ self() }
 (
-    adult                    BOOLEAN   NOT NULL
-  , id                       INT64     NOT NULL
-  , name                     STRING
+    id                       INT64     NOT NULL
+  , original_name            STRING
   , popularity               FLOAT64
 )
 FROM FILES (
   format = "JSON",
   hive_partition_uri_prefix = "gs://${ dataform.projectConfig.vars.LOAD_GCS_BUCKET }/",
-  uris = ["gs://${ dataform.projectConfig.vars.LOAD_GCS_BUCKET }/export_date*/person_ids.json"]
+  uris = ["gs://${ dataform.projectConfig.vars.LOAD_GCS_BUCKET }/export_date*/tv_series_ids.json"]
 )
 WITH PARTITION COLUMNS;

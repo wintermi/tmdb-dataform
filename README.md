@@ -57,24 +57,24 @@ The Dataform service account requires a number of IAM roles with which to be abl
 
 The `workflow_settings.yaml` contains the following parameters
 
--   `defaultProject`: The Project ID of your Google Cloud project, which you previously took note of
--   `defaultLocation`: Target BigQuery Location
--   `defaultDataset`: Name of the BigQuery Dataset for which the The Movie Database tables are to be created
--   `defaultAssertionDataset`: Name of the BigQuery Dataset for which any Dataform Assertions are to be created and executed against
--   `LOAD_GCS_BUCKET`: Name of the Google Cloud Storage Bucket, which you previously took note of
--   `RAW_DATA`: Name of the BigQuery Dataset for which the The Movie Database data files are to be loaded into
--   `TARGET_DATA`: Name of the BigQuery Dataset for which the final transformed The Movie Database tables are to be located
+- `defaultProject`: The Project ID of your Google Cloud project, which you previously took note of
+- `defaultLocation`: Target BigQuery Location
+- `defaultDataset`: Name of the BigQuery Dataset for which the The Movie Database tables are to be created
+- `defaultAssertionDataset`: Name of the BigQuery Dataset for which any Dataform Assertions are to be created and executed against
+- `LOAD_GCS_BUCKET`: Name of the Google Cloud Storage Bucket, which you previously took note of
+- `RAW_DATA`: Name of the BigQuery Dataset for which the The Movie Database data files are to be loaded into
+- `TARGET_DATA`: Name of the BigQuery Dataset for which the final transformed The Movie Database tables are to be located
 
-Here is what an example configuration looks like
+Here is an example configuration
 
 ```yaml
-dataformCoreVersion: 3.0.0-beta.6
+dataformCoreVersion: 3.0.8
 defaultProject: winter-dataform
 defaultLocation: australia-southeast1
 defaultDataset: tmdb
 defaultAssertionDataset: tmdb_assertions
 vars:
-    LOAD_GCS_BUCKET: winter-data/tmdb
-    RAW_DATA: tmdb_staging
-    TARGET_DATA: tmdb
+  LOAD_GCS_BUCKET: winter-data/tmdb
+  RAW_DATA: tmdb_staging
+  TARGET_DATA: tmdb
 ```
