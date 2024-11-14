@@ -70,7 +70,7 @@ Here is an example configuration
 ```yaml
 dataformCoreVersion: 3.0.8
 defaultProject: winter-dataform
-defaultLocation: australia-southeast1
+defaultLocation: us-central1
 defaultDataset: tmdb
 defaultAssertionDataset: tmdb_assertions
 vars:
