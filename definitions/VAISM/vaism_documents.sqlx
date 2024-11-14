@@ -24,5 +24,21 @@ FROM (SELECT
         , m.title
         , m.overview AS description
         , 'en-US' AS language_code
+--        , ...categories
+        , m.homepage AS uri
+        , ARRAY_CONCAT(IF(m.poster_image IS NOT NULL, [STRUCT('Poster Art' AS name, m.poster_image AS uri)], [])
+                     , IF(m.backdrop_image IS NOT NULL, [STRUCT('Backdrop Art' AS name, m.backdrop_image AS uri)], [])) AS images
+        , 'movie' AS media_type
+        , ARRAY_CONCAT([m.original_language]) AS in_languages
+        , m.origin_country[offset(0)] AS country_of_origin
+--        , ...content_index
+--        , ...filter_tags
+        , FORMAT('%ds', m.runtime) AS duration
+        , EXTRACT(YEAR FROM m.release_date) AS production_year
+--        , ...content_rating
+        , FORMAT_TIMESTAMP('%Y-%m-%dT%H:%M:%SZ', TIMESTAMP_SECONDS(m.release_date)) AS availability_start_time
+--        , ...aggregate_ratings
+--        , ...persons
+--        , ...hash_tags
       FROM ${ ref({ schema: dataform.projectConfig.vars.TARGET_DATA, name: "tmdb_movie" }) } AS m
      ) AS dt
