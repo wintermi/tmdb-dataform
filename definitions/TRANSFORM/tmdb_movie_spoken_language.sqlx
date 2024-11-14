@@ -1,0 +1,37 @@
+config {
+  type: "table",
+  schema: dataform.projectConfig.vars.TARGET_DATA,
+  description: "TMDB Movie Spoken Languages",
+  dependOnDependencyAssertions: true,
+  bigquery: {
+    clusterBy: ["id"]
+  },
+  assertions: {
+    uniqueKey: ["id", "pos"],
+    nonNull: ["id", "pos", "iso_639_1", "export_date"]
+  },
+  tags: ["TRANSFORM_DATA"]
+}
+
+
+SELECT
+    id
+  , pos
+  , JSON_VALUE(spoken_language.iso_639_1) AS iso_639_1
+  , JSON_VALUE(spoken_language.name) AS name
+  , JSON_VALUE(spoken_language.english_name) AS english_name
+  , export_date
+FROM (SELECT
+          id
+        , pos
+        , JSON_QUERY_ARRAY(response_json.spoken_languages)[ORDINAL(pos)] AS spoken_language
+        , export_date
+      FROM ${ ref({ schema: dataform.projectConfig.vars.TARGET_DATA, name: "tmdb_parsed_data" }) }
+        CROSS JOIN UNNEST(GENERATE_ARRAY(1, ARRAY_LENGTH(JSON_QUERY_ARRAY(response_json.spoken_languages)))) AS pos
+      WHERE type = 'movie'
+        AND response_type = 'detail'
+        AND response_json IS NOT NULL
+        AND response_json.status_code IS NULL
+      QUALIFY ROW_NUMBER() OVER (PARTITION BY id
+                                            , pos
+                                 ORDER BY export_date DESC) = 1) AS dt

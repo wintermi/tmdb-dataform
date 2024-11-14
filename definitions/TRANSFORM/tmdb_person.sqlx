@@ -1,0 +1,39 @@
+config {
+  type: "table",
+  schema: dataform.projectConfig.vars.TARGET_DATA,
+  description: "TMDB Person Details.",
+  dependOnDependencyAssertions: true,
+  bigquery: {
+    clusterBy: ["id"]
+  },
+  assertions: {
+    uniqueKey: ["id"],
+    nonNull: ["id", "export_date"]
+  },
+  tags: ["TRANSFORM_DATA"]
+}
+
+
+SELECT
+    id
+  , JSON_VALUE(response_json.name) AS name
+  , SAFE_CAST(JSON_VALUE(response_json.birthday) AS DATE) AS birthday
+  , JSON_VALUE(response_json.place_of_birth) AS place_of_birth
+  , SAFE_CAST(JSON_VALUE(response_json.deathday) AS DATE) AS deathday
+  , JSON_VALUE(response_json.biography) AS biography
+  , JSON_VALUE(response_json.known_for_department) AS known_for_department
+  , SAFE_CAST(JSON_VALUE(response_json.popularity) AS FLOAT64) AS popularity
+  , SAFE_CAST(JSON_VALUE(response_json.gender) AS INT64) AS gender
+  , IF(response_json.profile_path IS NOT NULL, FORMAT("https://image.tmdb.org/t/p/w500%s", JSON_VALUE(response_json.profile_path)), NULL) AS profile_image
+  , JSON_VALUE(response_json.homepage) AS homepage
+  , JSON_VALUE(response_json.imdb_id) AS imdb_id
+  , JSON_VALUE_ARRAY(response_json.also_known_as) AS also_known_as
+  , SAFE_CAST(JSON_VALUE(response_json.adult) AS BOOL) AS adult
+  , export_date
+FROM ${ ref({ schema: dataform.projectConfig.vars.TARGET_DATA, name: "tmdb_parsed_data" }) }
+WHERE type = "person"
+  AND response_type = "detail"
+  AND response_json IS NOT NULL
+  AND response_json.status_code IS NULL
+QUALIFY ROW_NUMBER() OVER (PARTITION BY id
+                           ORDER BY export_date DESC) = 1

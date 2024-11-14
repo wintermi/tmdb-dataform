@@ -1,0 +1,36 @@
+config {
+  type: "table",
+  schema: dataform.projectConfig.vars.TARGET_DATA,
+  description: "TMDB Movie Keywords",
+  dependOnDependencyAssertions: true,
+  bigquery: {
+    clusterBy: ["id"]
+  },
+  assertions: {
+    uniqueKey: ["id", "pos"],
+    nonNull: ["id", "pos", "keyword_id", "export_date"]
+  },
+  tags: ["TRANSFORM_DATA"]
+}
+
+
+SELECT
+    id
+  , pos
+  , SAFE_CAST(JSON_VALUE(keyword.id) AS INT64) AS keyword_id
+  , JSON_VALUE(keyword.name) AS keyword
+  , export_date
+FROM (SELECT
+          id
+        , pos
+        , JSON_QUERY_ARRAY(response_json.keywords)[ORDINAL(pos)] AS keyword
+        , export_date
+      FROM ${ ref({ schema: dataform.projectConfig.vars.TARGET_DATA, name: "tmdb_parsed_data" }) }
+        CROSS JOIN UNNEST(GENERATE_ARRAY(1, ARRAY_LENGTH(JSON_QUERY_ARRAY(response_json.keywords)))) AS pos
+      WHERE type = 'movie'
+        AND response_type = 'keywords'
+        AND response_json IS NOT NULL
+        AND response_json.status_code IS NULL
+      QUALIFY ROW_NUMBER() OVER (PARTITION BY id
+                                            , pos
+                                 ORDER BY export_date DESC) = 1) AS dt

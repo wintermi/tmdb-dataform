@@ -1,0 +1,38 @@
+config {
+  type: "table",
+  schema: dataform.projectConfig.vars.TARGET_DATA,
+  description: "TMDB Movie Production Companies",
+  dependOnDependencyAssertions: true,
+  bigquery: {
+    clusterBy: ["id"]
+  },
+  assertions: {
+    uniqueKey: ["id", "pos"],
+    nonNull: ["id", "pos", "production_company_id", "export_date"]
+  },
+  tags: ["TRANSFORM_DATA"]
+}
+
+
+SELECT
+    id
+  , pos
+  , SAFE_CAST(JSON_VALUE(production_company.id) AS INT64) AS production_company_id
+  , JSON_VALUE(production_company.name) AS name
+  , JSON_VALUE(production_company.origin_country) AS origin_country
+  , IF(production_company.logo_path IS NOT NULL, FORMAT("https://image.tmdb.org/t/p/w500%s", JSON_VALUE(production_company.logo_path)), NULL) AS logo_image
+  , export_date
+FROM (SELECT
+          id
+        , pos
+        , JSON_QUERY_ARRAY(response_json.production_companies)[ORDINAL(pos)] AS production_company
+        , export_date
+      FROM ${ ref({ schema: dataform.projectConfig.vars.TARGET_DATA, name: "tmdb_parsed_data" }) }
+        CROSS JOIN UNNEST(GENERATE_ARRAY(1, ARRAY_LENGTH(JSON_QUERY_ARRAY(response_json.production_companies)))) AS pos
+      WHERE type = 'movie'
+        AND response_type = 'detail'
+        AND response_json IS NOT NULL
+        AND response_json.status_code IS NULL
+      QUALIFY ROW_NUMBER() OVER (PARTITION BY id
+                                            , pos
+                                 ORDER BY export_date DESC) = 1) AS dt

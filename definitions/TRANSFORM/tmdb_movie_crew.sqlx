@@ -1,0 +1,45 @@
+config {
+  type: "table",
+  schema: dataform.projectConfig.vars.TARGET_DATA,
+  description: "TMDB Movie Crew",
+  dependOnDependencyAssertions: true,
+  bigquery: {
+    clusterBy: ["id"]
+  },
+  assertions: {
+    uniqueKey: ["id", "pos"],
+    nonNull: ["id", "pos", "person_id", "export_date"]
+  },
+  tags: ["TRANSFORM_DATA"]
+}
+
+
+SELECT
+    id
+  , pos
+  , SAFE_CAST(JSON_VALUE(movie_crew.id) AS INT64) AS person_id
+  , JSON_VALUE(movie_crew.name) AS name
+  , JSON_VALUE(movie_crew.original_name) AS original_name
+  , JSON_VALUE(movie_crew.department) AS department
+  , JSON_VALUE(movie_crew.job) AS job
+  , JSON_VALUE(movie_crew.known_for_department) AS known_for_department
+  , SAFE_CAST(JSON_VALUE(movie_crew.popularity) AS FLOAT64) AS popularity
+  , SAFE_CAST(JSON_VALUE(movie_crew.gender) AS INT64) AS gender
+  , IF(movie_crew.profile_path IS NOT NULL, FORMAT("https://image.tmdb.org/t/p/w500%s", JSON_VALUE(movie_crew.profile_path)), NULL) AS profile_image
+  , JSON_VALUE(movie_crew.credit_id) AS credit_id
+  , SAFE_CAST(JSON_VALUE(movie_crew.adult) AS BOOL) AS adult
+  , export_date
+FROM (SELECT
+          id
+        , pos
+        , JSON_QUERY_ARRAY(response_json.crew)[ORDINAL(pos)] AS movie_crew
+        , export_date
+      FROM ${ ref({ schema: dataform.projectConfig.vars.TARGET_DATA, name: "tmdb_parsed_data" }) }
+        CROSS JOIN UNNEST(GENERATE_ARRAY(1, ARRAY_LENGTH(JSON_QUERY_ARRAY(response_json.crew)))) AS pos
+      WHERE type = 'movie'
+        AND response_type = 'credits'
+        AND response_json IS NOT NULL
+        AND response_json.status_code IS NULL
+      QUALIFY ROW_NUMBER() OVER (PARTITION BY id
+                                            , pos
+                                 ORDER BY export_date DESC) = 1) AS dt

@@ -1,0 +1,36 @@
+config {
+  type: "table",
+  schema: dataform.projectConfig.vars.TARGET_DATA,
+  description: "TMDB Movie Production Countries",
+  dependOnDependencyAssertions: true,
+  bigquery: {
+    clusterBy: ["id"]
+  },
+  assertions: {
+    uniqueKey: ["id", "pos"],
+    nonNull: ["id", "pos", "iso_3166_1", "export_date"]
+  },
+  tags: ["TRANSFORM_DATA"]
+}
+
+
+SELECT
+    id
+  , pos
+  , JSON_VALUE(production_country.iso_3166_1) AS iso_3166_1
+  , JSON_VALUE(production_country.name) AS name
+  , export_date
+FROM (SELECT
+          id
+        , pos
+        , JSON_QUERY_ARRAY(response_json.production_countries)[ORDINAL(pos)] AS production_country
+        , export_date
+      FROM ${ ref({ schema: dataform.projectConfig.vars.TARGET_DATA, name: "tmdb_parsed_data" }) }
+        CROSS JOIN UNNEST(GENERATE_ARRAY(1, ARRAY_LENGTH(JSON_QUERY_ARRAY(response_json.production_countries)))) AS pos
+      WHERE type = 'movie'
+        AND response_type = 'detail'
+        AND response_json IS NOT NULL
+        AND response_json.status_code IS NULL
+      QUALIFY ROW_NUMBER() OVER (PARTITION BY id
+                                            , pos
+                                 ORDER BY export_date DESC) = 1) AS dt

@@ -1,0 +1,46 @@
+config {
+  type: "table",
+  schema: dataform.projectConfig.vars.TARGET_DATA,
+  description: "TMDB Movie Details",
+  dependOnDependencyAssertions: true,
+  bigquery: {
+    clusterBy: ["id"]
+  },
+  assertions: {
+    uniqueKey: ["id"],
+    nonNull: ["id", "export_date"]
+  },
+  tags: ["TRANSFORM_DATA"]
+}
+
+
+SELECT
+    id
+  , JSON_VALUE(response_json.title) AS title
+  , JSON_VALUE(response_json.original_title) AS original_title
+  , JSON_VALUE(response_json.status) AS status
+  , SAFE_CAST(JSON_VALUE(response_json.release_date) AS DATE) AS release_date
+  , SAFE_CAST(JSON_VALUE(response_json.budget) AS INT64) AS budget
+  , SAFE_CAST(JSON_VALUE(response_json.revenue) AS INT64) AS revenue
+  , JSON_VALUE(response_json.overview) AS overview
+  , JSON_VALUE(response_json.tagline) AS tagline
+  , SAFE_CAST(JSON_VALUE(response_json.runtime) AS INT64) AS runtime
+  , SAFE_CAST(JSON_VALUE(response_json.popularity) AS FLOAT64) AS popularity
+  , SAFE_CAST(JSON_VALUE(response_json.vote_count) AS INT64) AS vote_count
+  , SAFE_CAST(JSON_VALUE(response_json.vote_average) AS FLOAT64) AS vote_average
+  , JSON_VALUE_ARRAY(response_json.origin_country) AS origin_country
+  , JSON_VALUE(response_json.original_language) AS original_language
+  , JSON_VALUE(response_json.homepage) AS homepage
+  , IF(response_json.poster_path IS NOT NULL, FORMAT("https://image.tmdb.org/t/p/w500%s", JSON_VALUE(response_json.poster_path)), NULL) AS poster_image
+  , IF(response_json.backdrop_path IS NOT NULL, FORMAT("https://image.tmdb.org/t/p/w500%s", JSON_VALUE(response_json.backdrop_path)), NULL) AS backdrop_image
+  , JSON_VALUE(response_json.imdb_id) AS imdb_id
+  , SAFE_CAST(JSON_VALUE(response_json.video) AS BOOL) AS video
+  , SAFE_CAST(JSON_VALUE(response_json.adult) AS BOOL) AS adult
+  , export_date
+FROM ${ ref({ schema: dataform.projectConfig.vars.TARGET_DATA, name: "tmdb_parsed_data" }) }
+WHERE type = 'movie'
+  AND response_type = 'detail'
+  AND response_json IS NOT NULL
+  AND response_json.status_code IS NULL
+QUALIFY ROW_NUMBER() OVER (PARTITION BY id
+                           ORDER BY export_date DESC) = 1
