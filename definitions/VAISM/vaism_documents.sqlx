@@ -33,7 +33,7 @@ FROM (SELECT
         , IF(ARRAY_LENGTH(m.origin_country) > 0, m.origin_country[OFFSET(0)], NULL) AS country_of_origin
 --        , ...content_index
 --        , ...filter_tags
-        , FORMAT('%ds', m.runtime) AS duration
+        , FORMAT('%dm', m.runtime) AS duration
         , EXTRACT(YEAR FROM m.release_date) AS production_year
 --        , ...content_rating
         , FORMAT_TIMESTAMP('%Y-%m-%dT%H:%M:%SZ', CAST(m.release_date AS TIMESTAMP)) AS availability_start_time
