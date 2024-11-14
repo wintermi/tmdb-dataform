@@ -1,5 +1,5 @@
 config {
-  type: "view",
+  type: "table",
   schema: dataform.projectConfig.vars.TARGET_DATA,
   description: "Vertex AI Search for Media (VAIS:M) Documents",
   dependOnDependencyAssertions: true,
