@@ -8,8 +8,8 @@ config {
     clusterBy: ["type", "response_type"]
   },
   assertions: {
-    uniqueKey: ["id", "type", "export_date", "response_type"],
-    nonNull: ["id", "type", "export_date", "response_type"]
+    uniqueKey: ["id", "type", "response_type", "export_date"],
+    nonNull: ["id", "type", "response_type", "export_date"]
   },
   tags: ["PARSE_DATA"]
 }
