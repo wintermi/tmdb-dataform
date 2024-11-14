@@ -25,7 +25,7 @@ FROM (SELECT
         , movie.overview AS description
         , 'en-US' AS language_code
         , movie_genre.categories
-        , movie.homepage AS uri
+        , "https://www.themoviedb.org/movie/" || movie.id AS uri
         , ARRAY_CONCAT(IF(movie.poster_image IS NOT NULL, [STRUCT('Poster Art' AS name, movie.poster_image AS uri)], [])
                      , IF(movie.backdrop_image IS NOT NULL, [STRUCT('Backdrop Art' AS name, movie.backdrop_image AS uri)], [])) AS images
         , 'movie' AS media_type
@@ -33,14 +33,14 @@ FROM (SELECT
         , IF(ARRAY_LENGTH(movie.origin_country) > 0, movie.origin_country[OFFSET(0)], NULL) AS country_of_origin
         , 1 AS content_index
         , ARRAY_CONCAT(ARRAY<STRING>[]) AS filter_tags
-        , FORMAT('%dm', movie.runtime) AS duration
+        , IF(movie.runtime > 0, FORMAT('%dm', movie.runtime), NULL) AS duration
         , EXTRACT(YEAR FROM movie.release_date) AS production_year
         , ARRAY_CONCAT(ARRAY<STRING>[]) AS content_rating
         , FORMAT_TIMESTAMP('%Y-%m-%dT%H:%M:%SZ', CAST(movie.release_date AS TIMESTAMP)) AS availability_start_time
         , ARRAY_CONCAT([STRUCT("tmdb" AS rating_source
                                -- Formula to change the rating scale from 1-10 (TMDB) to 1-5 (VAISM)
                                -- (((OldValue - OldMin) * (NewMax - NewMin)) / (OldMax - OldMin)) + NewMin
-                             , (((movie.vote_average - 1) * (5 - 1)) / (10 - 1)) + 1 AS rating_score
+                             , (((movie.vote_average - 0) * (5 - 1)) / (10 - 0)) + 1 AS rating_score
                              , movie.vote_count AS rating_count)]) AS aggregate_ratings
         , ARRAY_CONCAT(movie_actor.persons, movie_character.persons, movie_director.persons) AS persons
         , ARRAY_CONCAT(ARRAY<STRING>[]) AS hash_tags
