@@ -42,7 +42,7 @@ FROM (SELECT
                                -- (((OldValue - OldMin) * (NewMax - NewMin)) / (OldMax - OldMin)) + NewMin
                              , (((movie.vote_average - 0) * (5 - 1)) / (10 - 0)) + 1 AS rating_score
                              , movie.vote_count AS rating_count)]) AS aggregate_ratings
-        , ARRAY_CONCAT(movie_actor.persons, movie_character.persons, movie_director.persons) AS persons
+        , ARRAY_CONCAT(movie_actor.persons, movie_character.persons) AS persons
         , ARRAY_CONCAT(ARRAY<STRING>[]) AS hash_tags
       FROM ${ ref({ schema: dataform.projectConfig.vars.TARGET_DATA, name: "tmdb_movie" }) } AS movie
         LEFT OUTER JOIN (SELECT
@@ -55,23 +55,14 @@ FROM (SELECT
                              id
                            , ARRAY_AGG(STRUCT("actor" AS role, name, pos AS rank) ORDER BY pos ASC) AS persons
                          FROM ${ ref({ schema: dataform.projectConfig.vars.TARGET_DATA, name: "tmdb_movie_cast" }) }
-                         WHERE known_for_department = 'Acting'
                          GROUP BY 1) AS movie_actor
           ON  movie.id = movie_actor.id
         LEFT OUTER JOIN (SELECT
                              id
                            , ARRAY_AGG(STRUCT("character" AS role, character AS name, pos AS rank) ORDER BY pos ASC) AS persons
                          FROM ${ ref({ schema: dataform.projectConfig.vars.TARGET_DATA, name: "tmdb_movie_cast" }) }
-                         WHERE known_for_department = 'Acting'
                          GROUP BY 1) AS movie_character
           ON  movie.id = movie_character.id
-        LEFT OUTER JOIN (SELECT
-                             id
-                           , ARRAY_AGG(STRUCT("director" AS role, name, pos AS rank) ORDER BY pos ASC) AS persons
-                         FROM ${ ref({ schema: dataform.projectConfig.vars.TARGET_DATA, name: "tmdb_movie_cast" }) }
-                         WHERE known_for_department = 'Directing'
-                         GROUP BY 1) AS movie_director
-          ON  movie.id = movie_director.id
         LEFT OUTER JOIN (SELECT
                              id
                            , ARRAY_AGG(CASE WHEN iso_639_1 = 'cn' THEN 'cmn'
