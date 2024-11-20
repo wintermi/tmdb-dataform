@@ -42,7 +42,8 @@ FROM (SELECT
                                -- (((OldValue - OldMin) * (NewMax - NewMin)) / (OldMax - OldMin)) + NewMin
                              , (((movie.vote_average - 0) * (5 - 1)) / (10 - 0)) + 1 AS rating_score
                              , movie.vote_count AS rating_count)]) AS aggregate_ratings
-        , ARRAY_CONCAT(movie_actor.persons, movie_character.persons) AS persons
+        , ARRAY_CONCAT(IF(movie_actor.persons IS NOT NULL, movie_actor.persons, [])
+                     , IF(movie_character.persons IS NOT NULL, movie_character.persons, [])) AS persons
         , ARRAY_CONCAT(ARRAY<STRING>[]) AS hash_tags
       FROM ${ ref({ schema: dataform.projectConfig.vars.TARGET_DATA, name: "tmdb_movie" }) } AS movie
         LEFT OUTER JOIN (SELECT
@@ -55,12 +56,14 @@ FROM (SELECT
                              id
                            , ARRAY_AGG(STRUCT("actor" AS role, name, pos AS rank) ORDER BY pos ASC) AS persons
                          FROM ${ ref({ schema: dataform.projectConfig.vars.TARGET_DATA, name: "tmdb_movie_cast" }) }
+                         WHERE LENGTH(TRIM(name)) > 0
                          GROUP BY 1) AS movie_actor
           ON  movie.id = movie_actor.id
         LEFT OUTER JOIN (SELECT
                              id
                            , ARRAY_AGG(STRUCT("character" AS role, character AS name, pos AS rank) ORDER BY pos ASC) AS persons
                          FROM ${ ref({ schema: dataform.projectConfig.vars.TARGET_DATA, name: "tmdb_movie_cast" }) }
+                         WHERE LENGTH(TRIM(character)) > 0
                          GROUP BY 1) AS movie_character
           ON  movie.id = movie_character.id
         LEFT OUTER JOIN (SELECT
