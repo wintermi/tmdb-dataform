@@ -73,6 +73,7 @@ FROM (SELECT
                                        END
                                        ORDER BY pos ASC) AS in_languages
                          FROM ${ ref({ schema: dataform.projectConfig.vars.TARGET_DATA, name: "tmdb_movie_spoken_language" }) }
+                         WHERE iso_639_1 NOT IN ('xx')
                          GROUP BY 1) AS movie_language
           ON  movie.id = movie_language.id
      ) AS dt
